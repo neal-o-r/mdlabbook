@@ -5,6 +5,9 @@
 # 
 # mdllabook is a markdown-format lab notebook
 #
+use utf8;
+use open ':encoding(utf8)';
+binmode(STDOUT, ":utf8");
 
 use strict;
 use warnings;
