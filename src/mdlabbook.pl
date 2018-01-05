@@ -2,12 +2,13 @@
 #
 # Fred P. Davis, NIH/NIAMS
 # fredpdavis@gmail.com
-# 
+#
 # mdllabook is a markdown-format lab notebook
 #
 use utf8;
 use open ':encoding(utf8)';
 binmode(STDOUT, ":utf8");
+binmode(STDERR, ":utf8");
 
 use strict;
 use warnings;
@@ -110,8 +111,8 @@ sub main {
 
       if ($day < 10) {$day = "0$day";}
       if ($month < 10) {$month = "0$month";}
-
-   } else { # If entry date specified, parse into year, month, day
+  
+     } else { # If entry date specified, parse into year, month, day
       if (length($opts->{e}) < 8) {
          die "ERROR: -e requires YEARMODA format. ".
              "eg, 20160326 for March 26, 2016\n".$usage;
@@ -133,7 +134,7 @@ sub main {
 
 # If this isn't a new notebook, look for prior date
    while (!defined $prevFn & $nbexists_flag) {
-      $prevDay-- ; 
+      $prevDay-- ;
       if ($prevDay < 0) {$prevDay = 31; $prevMo--;  }
       if ($prevMo < 0)  {$prevMo = 12;  $prevYear--;}
 
@@ -154,7 +155,7 @@ sub main {
    if (!exists $opts->{f}) { #ie entry mode
 
       my $todayFn = "$todayDir/$year$month$day.md" ;
-   
+  
       if (! -s $todayFn) { #only
          open(TODAYF, ">$todayFn") ;
          print TODAYF "---
@@ -210,6 +211,8 @@ sub make_webindex {
 # Make calendar tables linked to entries
    my $cwd = getcwd() ;
    chdir $opts->{dir} ;
+  
+   my $day=(localtime)[3];
 
    my $specs = {months_per_line => 3} ;
 
@@ -237,13 +240,16 @@ author: ".$opts->{author}."
 
    print "<table><tr>\n"; #HORIZ
    my $linenum = 0 ;
-   my $x = 0 ;
+   my $x = 0;
+   my $z = 0;
+
    foreach my $month (sort {$b <=> $a} keys %{$month2entry}) {
 
       my ($y, $m) = ($month =~ /(20[0-9][0-9])([0-9][0-9])/) ;
 
       my $calout = `cal $m $y` ; chomp $calout ;
       my @callines = split(/\n/, $calout) ;
+     
       my $month_string = shift @callines ;
       $month_string =~ s/^ +// ;
       $month_string =~ s/ +$// ;
@@ -251,17 +257,23 @@ author: ".$opts->{author}."
 #VERT      print "<p><table><caption>$month_string</caption>\n" ;
       print "<td><table><caption>$month_string</caption>\n" ; #HORIZ
       foreach my $j ( 0 .. $#callines) {
-
+   
          $callines[$j] .= ' ' ;
          my (@curdays) = ( $callines[$j] =~ m/.{3}/g );
-#         print STDERR "last curday = ".$curdays[$#curdays]."\n";
-         my @outcells = @curdays ;
+        
+     my @outcells = @curdays ;
          my @linkeddays ;
-         foreach my $k ( 0 .. $#curdays) {
-            my $val = $curdays[$k] ;
-            $val =~ s/ //g ;
+     # this eats a weird non-printing character the source of which i cannot find!!!
+     # one of the worst hacks i've ever implemented
+     if ($z == int($day/7) + 1) {
+        splice(@curdays, $day % 7, 1) ;
+    }
 
-            if ($val =~ /^[0-9]+$/) {
+     foreach my $k ( 0 .. $#curdays) {
+            my $val = $curdays[$k] ;
+        $val =~ s/ //g ;
+
+        if ($val =~ /^[0-9]+$/) {
                if (length($val) == 1) {
                   $val = '0'.$val ;
                }
@@ -273,12 +285,12 @@ author: ".$opts->{author}."
             } else {
                $val = "<b>$val</b>" ;
             }
-
-            $outcells[$k] = "<td>$val</td>" ;
+        $outcells[$k] = "<td>$val</td>" ;
          }
-         print "<tr>\n" ;
+     print "<tr>\n" ;
          print join(" ", @outcells)."\n";
-         print "</tr>\n"
+         print "</tr>\n" ;
+     $z++ ;
       }
       print "</table>" ;
       print "\n\n" ;
@@ -451,7 +463,7 @@ fontsize: 11pt
 
          if ($inheader) {
             if ($line =~ /date/) {
-               $line =~ s/date: //; 
+               $line =~ s/date: //;
                print {$fh->{wholemd}} "\n# ".$line."\n" ;
             }
             next;
