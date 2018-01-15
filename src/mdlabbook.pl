@@ -168,7 +168,7 @@ date: $monthName $day, $year
       }
 
       if ($opts->{editor} eq 'vim' & defined $prevFn) {
-         system("vim $todayFn") ;
+         system("vim -c ':Goyo' $todayFn") ;
       } elsif ($opts->{editor} eq 'emacs' & defined $prevFn) {
          system("emacs -nw $prevFn $todayFn") ;
       } else {
